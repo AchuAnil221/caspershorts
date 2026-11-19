@@ -16,6 +16,7 @@ import Timeline from '@/components/editor/Timeline';
 import SubtitleTrack from '@/components/editor/SubtitleTrack';
 import LeftSidebar from '@/components/editor/LeftSidebar';
 import RightSidebar from '@/components/editor/RightSidebar';
+import { getYouTubeIdFromClip } from '@/lib/utils';
 
 export default function EditorPage() {
   const params = useParams();
@@ -79,10 +80,7 @@ export default function EditorPage() {
 
         setClipTitle(resolvedClip.title);
         // Extract YouTube ID if created from YouTube
-        const ytId =
-          resolvedClip.youtube_id ||
-          (resolvedClip.source_url?.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/)?.[2]) ||
-          (resolvedClip.thumbnail_url?.match(/\/vi\/([a-zA-Z0-9_-]{11})\//)?.[1]);
+        const ytId = getYouTubeIdFromClip(resolvedClip);
 
         if (ytId) {
           useEditorStore.getState().setYoutubeId(ytId);

@@ -24,24 +24,7 @@ import { INITIAL_CLIPS } from "@/lib/mockData";
 import { GeneratedClip } from "@/types";
 import CaptionOverlay from "@/components/common/CaptionOverlay";
 import { SubtitleStyle } from "@/store/editorStore";
-
-function getYouTubeIdFromClip(clip: any): string | null {
-  if (!clip) return null;
-  if (clip.youtube_id) return clip.youtube_id;
-  if (clip.source_url) {
-    const match = clip.source_url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/);
-    if (match && match[2].length === 11) return match[2];
-  }
-  if (clip.thumbnail_url && clip.thumbnail_url.includes("youtube.com/vi/")) {
-    const match = clip.thumbnail_url.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
-    if (match && match[1]) return match[1];
-  }
-  if (clip.rendered_url && clip.rendered_url.includes("youtube.com")) {
-    const match = clip.rendered_url.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
-    if (match && match[1]) return match[1];
-  }
-  return null;
-}
+import { getYouTubeIdFromClip } from "@/lib/utils";
 
 export default function GeneratedClipsPage() {
   const [clips, setClips] = useState<GeneratedClip[]>(INITIAL_CLIPS);
@@ -51,6 +34,7 @@ export default function GeneratedClipsPage() {
   const [previewClip, setPreviewClip] = useState<GeneratedClip | null>(null);
   const [previewTime, setPreviewTime] = useState(0);
   const [previewStyle, setPreviewStyle] = useState<SubtitleStyle>("bold");
+  const [zoomLevel, setZoomLevel] = useState<number>(1.35);
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [tempTitle, setTempTitle] = useState("");
 
@@ -390,38 +374,41 @@ export default function GeneratedClipsPage() {
                 </div>
               </div>
 
-              {/* Foreground Center Video (YouTube Embed or Native Video) */}
-              <div className="relative z-10 w-full h-full flex items-center justify-center p-2">
-                {getYouTubeIdFromClip(previewClip) ? (
-                  <div className="w-full aspect-video max-h-[64%] shadow-2xl rounded-xl overflow-hidden bg-black border border-white/10">
+              {/* Foreground Center Video (YouTube Embed or Native Video) with Smart Zoom */}
+              <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden">
+                <div
+                  className="w-full aspect-video shadow-2xl rounded-2xl overflow-hidden bg-black border border-white/10 transition-transform duration-300 origin-center flex items-center justify-center"
+                  style={{ transform: `scale(${zoomLevel})` }}
+                >
+                  {getYouTubeIdFromClip(previewClip) ? (
                     <iframe
                       src={`https://www.youtube-nocookie.com/embed/${getYouTubeIdFromClip(
                         previewClip
                       )}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0&start=${Math.floor(
                         previewClip.start_time || 0
                       )}`}
-                      className="w-full h-full border-0 rounded-xl"
+                      className="w-full h-full border-0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
-                  </div>
-                ) : (
-                  <video
-                    controls
-                    autoPlay
-                    playsInline
-                    className="w-full object-contain max-h-[64%] shadow-2xl rounded-lg"
-                    src={previewClip.rendered_url}
-                    onLoadedMetadata={(e) => {
-                      const video = e.currentTarget;
-                      if (video.textTracks) {
-                        for (let i = 0; i < video.textTracks.length; i++) {
-                          video.textTracks[i].mode = 'disabled';
+                  ) : (
+                    <video
+                      controls
+                      autoPlay
+                      playsInline
+                      className="w-full h-full object-cover"
+                      src={previewClip.rendered_url}
+                      onLoadedMetadata={(e) => {
+                        const video = e.currentTarget;
+                        if (video.textTracks) {
+                          for (let i = 0; i < video.textTracks.length; i++) {
+                            video.textTracks[i].mode = 'disabled';
+                          }
                         }
-                      }
-                    }}
-                  />
-                )}
+                      }}
+                    />
+                  )}
+                </div>
               </div>
 
               {/* Dynamic Bottom Subtitle Overlay */}
@@ -442,23 +429,48 @@ export default function GeneratedClipsPage() {
               />
             </div>
 
-            {/* Subtitle Style Quick Selector */}
-            <div className="mt-2.5 flex items-center justify-between bg-zinc-50 p-1.5 rounded-xl border border-zinc-200">
-              <span className="text-[10px] text-zinc-500 font-semibold px-1">Subtitle Style:</span>
-              <div className="flex items-center gap-1">
-                {(['bold', 'highlight', 'creator', 'minimal'] as SubtitleStyle[]).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setPreviewStyle(st)}
-                    className={`px-1.5 py-0.5 text-[10px] rounded-lg font-semibold capitalize transition ${
-                      previewStyle === st
-                        ? 'bg-blue-600 text-white shadow-sm'
-                        : 'bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-100'
-                    }`}
-                  >
-                    {st}
-                  </button>
-                ))}
+            {/* Controls: Video Zoom & Subtitle Style */}
+            <div className="mt-2.5 space-y-2">
+              <div className="flex items-center justify-between bg-zinc-50 p-1.5 rounded-xl border border-zinc-200">
+                <span className="text-[10px] text-zinc-500 font-semibold px-1">Video Zoom:</span>
+                <div className="flex items-center gap-1">
+                  {[
+                    { label: 'Fit (1.0x)', val: 1.0 },
+                    { label: 'Zoomed (1.35x)', val: 1.35 },
+                    { label: 'Focus (1.5x)', val: 1.5 },
+                  ].map((z) => (
+                    <button
+                      key={z.val}
+                      onClick={() => setZoomLevel(z.val)}
+                      className={`px-2 py-0.5 text-[10px] rounded-lg font-semibold transition ${
+                        zoomLevel === z.val
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-100'
+                      }`}
+                    >
+                      {z.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between bg-zinc-50 p-1.5 rounded-xl border border-zinc-200">
+                <span className="text-[10px] text-zinc-500 font-semibold px-1">Subtitle Style:</span>
+                <div className="flex items-center gap-1">
+                  {(['bold', 'highlight', 'creator', 'minimal'] as SubtitleStyle[]).map((st) => (
+                    <button
+                      key={st}
+                      onClick={() => setPreviewStyle(st)}
+                      className={`px-1.5 py-0.5 text-[10px] rounded-lg font-semibold capitalize transition ${
+                        previewStyle === st
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-100'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

@@ -7,6 +7,7 @@ import { clsx } from 'clsx';
 import { ClipData } from './ClipCard';
 import CaptionOverlay from '@/components/common/CaptionOverlay';
 import { SubtitleStyle } from '@/store/editorStore';
+import { getYouTubeIdFromClip } from '@/lib/utils';
 
 interface ClipPreviewModalProps {
   clip: ClipData | null;
@@ -14,28 +15,11 @@ interface ClipPreviewModalProps {
   onDownload: (id: string) => void;
 }
 
-function getYouTubeIdFromClip(clip: any): string | null {
-  if (!clip) return null;
-  if (clip.youtube_id) return clip.youtube_id;
-  if (clip.source_url) {
-    const match = clip.source_url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/);
-    if (match && match[2].length === 11) return match[2];
-  }
-  if (clip.thumbnail_url && clip.thumbnail_url.includes("youtube.com/vi/")) {
-    const match = clip.thumbnail_url.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
-    if (match && match[1]) return match[1];
-  }
-  if (clip.videoUrl && clip.videoUrl.includes("youtube.com")) {
-    const match = clip.videoUrl.match(/\/vi\/([a-zA-Z0-9_-]{11})\//);
-    if (match && match[1]) return match[1];
-  }
-  return null;
-}
-
 export default function ClipPreviewModal({ clip, onClose, onDownload }: ClipPreviewModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [selectedStyle, setSelectedStyle] = useState<SubtitleStyle>('bold');
+  const [zoomLevel, setZoomLevel] = useState<number>(1.35);
 
   // Close on ESC
   useEffect(() => {
@@ -137,33 +121,36 @@ export default function ClipPreviewModal({ clip, onClose, onDownload }: ClipPrev
                 </div>
               </div>
 
-              {/* Foreground Centered Video (YouTube or Native) */}
-              <div className="relative z-10 w-full h-full flex items-center justify-center p-2">
-                {getYouTubeIdFromClip(clip) ? (
-                  <div className="w-full aspect-video max-h-[64%] shadow-2xl rounded-xl overflow-hidden bg-black border border-white/10">
+              {/* Foreground Centered Video (YouTube or Native) with Smart Zoom */}
+              <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden">
+                <div
+                  className="w-full aspect-video shadow-2xl rounded-2xl overflow-hidden bg-black border border-white/10 transition-transform duration-300 origin-center flex items-center justify-center"
+                  style={{ transform: `scale(${zoomLevel})` }}
+                >
+                  {getYouTubeIdFromClip(clip) ? (
                     <iframe
                       src={`https://www.youtube-nocookie.com/embed/${getYouTubeIdFromClip(
                         clip
                       )}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0`}
-                      className="w-full h-full border-0 rounded-xl"
+                      className="w-full h-full border-0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
-                  </div>
-                ) : (
-                  <video
-                    ref={videoRef}
-                    src={clip.videoUrl}
-                    controls
-                    autoPlay
-                    onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-                    onLoadedMetadata={(e) => {
-                      disableNativeSubtitleTracks();
-                      setCurrentTime(0);
-                    }}
-                    className="w-full object-contain max-h-[64%] shadow-2xl rounded-lg"
-                  />
-                )}
+                  ) : (
+                    <video
+                      ref={videoRef}
+                      src={clip.videoUrl}
+                      controls
+                      autoPlay
+                      onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                      onLoadedMetadata={(e) => {
+                        disableNativeSubtitleTracks();
+                        setCurrentTime(0);
+                      }}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
               </div>
 
               {/* Dynamic Bottom Subtitle Overlay */}
@@ -195,6 +182,34 @@ export default function ClipPreviewModal({ clip, onClose, onDownload }: ClipPrev
             </div>
             <h2 className="text-lg font-bold text-zinc-950 mb-1 pr-6 leading-snug">{clip.title}</h2>
             {clip.projectName && <p className="text-xs text-zinc-500">{clip.projectName}</p>}
+          </div>
+
+          {/* Video Zoom Control */}
+          <div className="bg-zinc-50 p-3.5 rounded-2xl border border-zinc-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-zinc-700">Video Framing Zoom</span>
+              <span className="text-[10px] text-zinc-500 font-mono">{zoomLevel.toFixed(2)}x</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { label: 'Fit (1.0x)', val: 1.0 },
+                { label: 'Zoomed (1.35x)', val: 1.35 },
+                { label: 'Focus (1.5x)', val: 1.5 },
+              ].map((z) => (
+                <button
+                  key={z.val}
+                  onClick={() => setZoomLevel(z.val)}
+                  className={clsx(
+                    'py-1.5 px-2 text-xs rounded-xl font-semibold transition text-center',
+                    zoomLevel === z.val
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                      : 'bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100'
+                  )}
+                >
+                  {z.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Subtitle Style Switcher */}

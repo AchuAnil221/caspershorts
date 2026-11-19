@@ -171,35 +171,37 @@ export default function VideoPreview({ className }: VideoPreviewProps) {
             )}
 
             {/* Foreground Sharp Center Video (YouTube or Native) */}
-            <div className="relative z-10 w-full h-full flex items-center justify-center p-2">
-              {youtubeId ? (
-                <div className="w-full aspect-video max-h-[64%] shadow-2xl rounded-xl overflow-hidden bg-black border border-white/10">
+            <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden">
+              <div
+                className={clsx(
+                  'transition-transform duration-300 origin-center flex items-center justify-center',
+                  aspectRatio === '9:16' && layoutMode === 'blur_padded'
+                    ? 'w-full aspect-video shadow-2xl rounded-2xl overflow-hidden bg-black border border-white/10 scale-[1.35]'
+                    : 'w-full h-full'
+                )}
+              >
+                {youtubeId ? (
                   <iframe
                     src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0&start=${Math.floor(
                       startTrim || 0
                     )}`}
-                    className="w-full h-full border-0 rounded-xl"
+                    className="w-full h-full border-0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   />
-                </div>
-              ) : (
-                <video
-                  ref={videoRef}
-                  src={videoUrl || undefined}
-                  className={clsx(
-                    'w-full transition-all',
-                    aspectRatio === '9:16' && layoutMode === 'blur_padded'
-                      ? 'object-contain max-h-[60%] sm:max-h-[64%] shadow-2xl rounded-lg'
-                      : 'h-full object-cover'
-                  )}
-                  onTimeUpdate={handleTimeUpdate}
-                  onLoadedMetadata={handleLoadedMetadata}
-                  onEnded={() => setIsPlaying(false)}
-                  muted={isMuted}
-                  playsInline
-                />
-              )}
+                ) : (
+                  <video
+                    ref={videoRef}
+                    src={videoUrl || undefined}
+                    className="w-full h-full object-cover"
+                    onTimeUpdate={handleTimeUpdate}
+                    onLoadedMetadata={handleLoadedMetadata}
+                    onEnded={() => setIsPlaying(false)}
+                    muted={isMuted}
+                    playsInline
+                  />
+                )}
+              </div>
             </div>
 
             {/* Bottom Spoken/Translated Subtitles Overlay */}
