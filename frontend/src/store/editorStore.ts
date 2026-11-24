@@ -2,9 +2,10 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 export type AspectRatio = '9:16' | '1:1' | '16:9';
-export type SubtitleStyle = 'minimal' | 'bold' | 'highlight' | 'creator' | 'professional';
+export type SubtitleStyle = 'minimal' | 'bold' | 'highlight' | 'creator' | 'professional' | 'white_box' | 'seam_bold';
 export type CropMode = 'smart' | 'center' | 'manual';
-export type LayoutMode = 'blur_padded' | 'smart_crop';
+export type LayoutMode = 'blur_padded' | 'smart_crop' | 'split_streamer';
+export type VideoTemplate = 'viral_hook' | 'split_streamer';
 export type ExportQuality = '720p' | '1080p';
 
 export interface Caption {
@@ -30,6 +31,7 @@ export interface EditorState {
   aspectRatio: AspectRatio;
   cropMode: CropMode;
   layoutMode: LayoutMode;
+  template: VideoTemplate;
   captions: Caption[];
   selectedCaption: string | null;
   exportQuality: ExportQuality;
@@ -56,6 +58,7 @@ export interface EditorState {
   setAspectRatio: (ratio: AspectRatio) => void;
   setCropMode: (mode: CropMode) => void;
   setLayoutMode: (mode: LayoutMode) => void;
+  setTemplate: (template: VideoTemplate) => void;
   setCaptions: (captions: Caption[]) => void;
   updateCaption: (id: string, updates: Partial<Caption>) => void;
   deleteCaption: (id: string) => void;
@@ -88,6 +91,7 @@ const initialState = {
   aspectRatio: '9:16' as AspectRatio,
   cropMode: 'smart' as CropMode,
   layoutMode: 'blur_padded' as LayoutMode,
+  template: 'viral_hook' as VideoTemplate,
   captions: [],
   selectedCaption: null,
   exportQuality: '1080p' as ExportQuality,
@@ -118,6 +122,7 @@ export const useEditorStore = create<EditorState>()(
       setAspectRatio: (ratio) => set({ aspectRatio: ratio }),
       setCropMode: (mode) => set({ cropMode: mode }),
       setLayoutMode: (mode) => set({ layoutMode: mode }),
+      setTemplate: (template) => set({ template }),
       setCaptions: (captions) => set({ captions }),
       updateCaption: (id, updates) =>
         set((state) => ({

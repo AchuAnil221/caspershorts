@@ -37,8 +37,19 @@ const CROP_MODES: { value: CropMode; label: string }[] = [
 
 export default function LeftSidebar() {
   const [activeTab, setActiveTab] = useState<Tab>('settings');
-  const { cropMode, setCropMode, fontFamily, fontSize, fontColor, setFontFamily, setFontSize, setFontColor } =
-    useEditorStore();
+  const {
+    cropMode,
+    setCropMode,
+    template,
+    setTemplate,
+    setSelectedStyle,
+    fontFamily,
+    fontSize,
+    fontColor,
+    setFontFamily,
+    setFontSize,
+    setFontColor,
+  } = useEditorStore();
 
   return (
     <aside className="w-60 shrink-0 bg-white border-r border-zinc-200 flex flex-col h-full shadow-sm">
@@ -72,6 +83,41 @@ export default function LeftSidebar() {
           <div className="space-y-5">
             <Section title="Aspect Ratio">
               <AspectRatioSelector />
+            </Section>
+
+            <Section title="Reference Template">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => {
+                    setTemplate('viral_hook');
+                    setSelectedStyle('white_box');
+                  }}
+                  className={clsx(
+                    'py-2 px-2 rounded-xl text-[11px] font-bold border transition-all flex flex-col items-center gap-0.5',
+                    template === 'viral_hook'
+                      ? 'bg-red-600 border-red-600 text-white shadow-sm'
+                      : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+                  )}
+                >
+                  <span>🔴 Red Hook</span>
+                  <span className="text-[9px] opacity-80 font-normal">Ref 2</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setTemplate('split_streamer');
+                    setSelectedStyle('seam_bold');
+                  }}
+                  className={clsx(
+                    'py-2 px-2 rounded-xl text-[11px] font-bold border transition-all flex flex-col items-center gap-0.5',
+                    template === 'split_streamer'
+                      ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                      : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'
+                  )}
+                >
+                  <span>🎮 Split Screen</span>
+                  <span className="text-[9px] opacity-80 font-normal">Ref 1</span>
+                </button>
+              </div>
             </Section>
 
             <Section title="Framing & Crop Mode">

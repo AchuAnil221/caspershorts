@@ -17,14 +17,28 @@ import {
   Check,
   Edit2,
   Share2,
+  Volume2,
+  VolumeX,
+  Layout,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { INITIAL_CLIPS } from "@/lib/mockData";
 import { GeneratedClip } from "@/types";
 import CaptionOverlay from "@/components/common/CaptionOverlay";
-import { SubtitleStyle } from "@/store/editorStore";
+import { SubtitleStyle, VideoTemplate } from "@/store/editorStore";
 import { getYouTubeIdFromClip } from "@/lib/utils";
+
+function formatHookTitle(title: string) {
+  const clean = (title || "").replace(/^\[Part \d+\]\s*/i, "").trim();
+  if (clean.toLowerCase().includes("gta") || clean.toLowerCase().includes("grand theft auto") || clean.toLowerCase().includes("lucia")) {
+    return "This GTA 6 house\nhas a self-aware NPC";
+  }
+  const words = clean.split(" ");
+  if (words.length <= 4) return clean;
+  const mid = Math.ceil(words.length / 2);
+  return `${words.slice(0, mid).join(" ")}\n${words.slice(mid).join(" ")}`;
+}
 
 export default function GeneratedClipsPage() {
   const [clips, setClips] = useState<GeneratedClip[]>(INITIAL_CLIPS);
@@ -33,8 +47,10 @@ export default function GeneratedClipsPage() {
   const [selectedPlatform, setSelectedPlatform] = useState<string>("all");
   const [previewClip, setPreviewClip] = useState<GeneratedClip | null>(null);
   const [previewTime, setPreviewTime] = useState(0);
-  const [previewStyle, setPreviewStyle] = useState<SubtitleStyle>("bold");
+  const [previewTemplate, setPreviewTemplate] = useState<VideoTemplate>("viral_hook");
+  const [previewStyle, setPreviewStyle] = useState<SubtitleStyle>("white_box");
   const [zoomLevel, setZoomLevel] = useState<number>(1.35);
+  const [previewMuted, setPreviewMuted] = useState(true);
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [tempTitle, setTempTitle] = useState("");
 
@@ -342,136 +358,213 @@ export default function GeneratedClipsPage() {
             </div>
 
             {/* Video container with Casper Shorts Dynamic Subtitles */}
-            <div className="relative mt-3 aspect-[9/16] w-full rounded-2xl overflow-hidden bg-zinc-950 flex items-center justify-center group shadow-md border border-zinc-200">
-              {/* Blurred Ambient Layer (Top & Bottom) */}
-              {getYouTubeIdFromClip(previewClip) ? (
-                <div
-                  className="absolute inset-0 w-full h-full bg-cover bg-center blur-2xl scale-125 opacity-70 pointer-events-none"
-                  style={{
-                    backgroundImage: `url(${
-                      previewClip.thumbnail_url ||
-                      `https://img.youtube.com/vi/${getYouTubeIdFromClip(previewClip)}/hqdefault.jpg`
-                    })`,
-                  }}
-                />
-              ) : (
-                <video
-                  src={previewClip.rendered_url}
-                  muted
-                  playsInline
-                  autoPlay
-                  loop
-                  className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-70 pointer-events-none"
-                />
-              )}
-
-              {/* Top Viral Hook Headline Badge */}
-              <div className="absolute top-3 inset-x-2 z-30 flex justify-center pointer-events-none">
-                <div className="bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 shadow-lg max-w-[92%]">
-                  <h4 className="text-white font-black text-[11px] uppercase tracking-wide text-center truncate">
-                    {previewClip.title.replace(/^\[Part \d+\]\s*/, '')}
-                  </h4>
-                </div>
-              </div>
-
-              {/* Foreground Center Video (YouTube Embed or Native Video) with Smart Zoom */}
-              <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden">
-                <div
-                  className="w-full aspect-video shadow-2xl rounded-2xl overflow-hidden bg-black border border-white/10 transition-transform duration-300 origin-center flex items-center justify-center"
-                  style={{ transform: `scale(${zoomLevel})` }}
-                >
-                  {getYouTubeIdFromClip(previewClip) ? (
-                    <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${getYouTubeIdFromClip(
-                        previewClip
-                      )}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0&start=${Math.floor(
-                        previewClip.start_time || 0
-                      )}`}
-                      className="w-full h-full border-0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  ) : (
+            <div className="relative mt-3 aspect-[9/16] w-full rounded-2xl overflow-hidden bg-black flex flex-col items-center justify-center group shadow-2xl border border-zinc-200 select-none">
+              {/* ── TEMPLATE 1: SPLIT STREAMER (Ref Photo 1) ── */}
+              {previewTemplate === "split_streamer" ? (
+                <div className="w-full h-full relative flex flex-col overflow-hidden">
+                  {/* Top 38%: Streamer Facecam */}
+                  <div className="w-full h-[38%] relative overflow-hidden bg-zinc-900 border-b border-black">
                     <video
-                      controls
+                      src="/videos/streamer.mp4"
                       autoPlay
+                      loop
+                      muted={previewMuted}
+                      playsInline
+                      className="w-full h-full object-cover object-top"
+                    />
+                    <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-bold text-white border border-white/10 uppercase tracking-wider">
+                      Facecam
+                    </div>
+                  </div>
+
+                  {/* Bottom 62%: Gameplay Action */}
+                  <div className="w-full h-[62%] relative overflow-hidden bg-zinc-950">
+                    <video
+                      src={
+                        previewClip.rendered_url &&
+                        !previewClip.rendered_url.includes("commondatastorage.googleapis.com") &&
+                        !previewClip.rendered_url.includes("youtube.com")
+                          ? previewClip.rendered_url
+                          : "/videos/gameplay.mp4"
+                      }
+                      autoPlay
+                      loop
+                      muted={previewMuted}
                       playsInline
                       className="w-full h-full object-cover"
-                      src={previewClip.rendered_url}
-                      onLoadedMetadata={(e) => {
-                        const video = e.currentTarget;
-                        if (video.textTracks) {
-                          for (let i = 0; i < video.textTracks.length; i++) {
-                            video.textTracks[i].mode = 'disabled';
-                          }
-                        }
-                      }}
                     />
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              {/* Dynamic Bottom Subtitle Overlay */}
-              <CaptionOverlay
-                currentTime={previewTime}
-                captions={(previewClip as any).captions || [
-                  { id: 'c1', text: `${previewClip.title.slice(0, 32)}`, startTime: 0, endTime: 3.5 },
-                  { id: 'c2', text: 'AI detected high-retention viral moment', startTime: 3.8, endTime: 7.5 },
-                  { id: 'c3', text: 'Smart speaker tracking in vertical 9:16', startTime: 7.8, endTime: 11.5 },
-                  { id: 'c4', text: 'Dynamic animated karaoke subtitles', startTime: 12.0, endTime: 16.0 },
-                ]}
-                style={previewStyle}
-                fontSize={18}
-                fontColor="#ffffff"
-                position="bottom"
-                visible={true}
-                className="z-30 pointer-events-none"
-              />
+                  {/* Seam Subtitle across boundary */}
+                  <div className="absolute top-[38%] -translate-y-1/2 inset-x-0 z-30 flex justify-center pointer-events-none px-4">
+                    <CaptionOverlay
+                      currentTime={previewTime}
+                      captions={(previewClip as any).captions || [
+                        { id: "c1", text: "This GTA 6 house has a self-aware NPC", startTime: 0, endTime: 3.5 },
+                        { id: "c2", text: "and fans theorized that it was a", startTime: 3.6, endTime: 7.2 },
+                        { id: "c3", text: "secret storyline trigger by Rockstar", startTime: 7.5, endTime: 11.5 },
+                        { id: "c4", text: "Watch what happens when you step closer", startTime: 12.0, endTime: 16.0 },
+                      ]}
+                      style="seam_bold"
+                      fontSize={22}
+                      position="middle"
+                      visible={true}
+                      className="static"
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* ── TEMPLATE 2: VIRAL RED HOOK + AMBIENT BLUR (Ref Photo 2) ── */
+                <div className="w-full h-full relative flex items-center justify-center overflow-hidden">
+                  {/* Ambient Blurred Background */}
+                  <video
+                    src={
+                      previewClip.rendered_url &&
+                      !previewClip.rendered_url.includes("commondatastorage.googleapis.com") &&
+                      !previewClip.rendered_url.includes("youtube.com")
+                        ? previewClip.rendered_url
+                        : "/videos/gameplay.mp4"
+                    }
+                    muted
+                    playsInline
+                    autoPlay
+                    loop
+                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-70 pointer-events-none"
+                  />
+                  <div className="absolute inset-0 bg-black/20 pointer-events-none" />
+
+                  {/* Top Red Viral Hook Card (Ref 2) */}
+                  <div className="absolute top-4 inset-x-3 z-30 flex justify-center pointer-events-none">
+                    <div className="bg-[#e50914] px-3.5 py-2 rounded-2xl shadow-2xl border border-red-400/30 max-w-[90%] text-center">
+                      <h4 className="text-white font-black text-[11px] sm:text-xs uppercase tracking-tight leading-snug drop-shadow whitespace-pre-line">
+                        {formatHookTitle(previewClip.title)}
+                      </h4>
+                    </div>
+                  </div>
+
+                  {/* Center Scaled Gameplay Video */}
+                  <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden">
+                    <div
+                      className="w-full aspect-video shadow-2xl rounded-2xl overflow-hidden bg-black border border-white/10 transition-transform duration-300 origin-center flex items-center justify-center"
+                      style={{ transform: `scale(${zoomLevel})` }}
+                    >
+                      <video
+                        controls={false}
+                        autoPlay
+                        loop
+                        playsInline
+                        muted={previewMuted}
+                        className="w-full h-full object-cover"
+                        src={
+                          previewClip.rendered_url &&
+                          !previewClip.rendered_url.includes("commondatastorage.googleapis.com") &&
+                          !previewClip.rendered_url.includes("youtube.com")
+                            ? previewClip.rendered_url
+                            : "/videos/gameplay.mp4"
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  {/* Lower Third White Box Subtitle Badge (Ref 2) */}
+                  <div className="absolute bottom-10 inset-x-2 z-30 flex justify-center pointer-events-none">
+                    <CaptionOverlay
+                      currentTime={previewTime}
+                      captions={(previewClip as any).captions || [
+                        { id: "c1", text: "This GTA 6 house has a self-aware NPC", startTime: 0, endTime: 3.5 },
+                        { id: "c2", text: "and fans theorized that it was a", startTime: 3.6, endTime: 7.2 },
+                        { id: "c3", text: "secret storyline trigger by Rockstar", startTime: 7.5, endTime: 11.5 },
+                        { id: "c4", text: "Watch what happens when you step closer", startTime: 12.0, endTime: 16.0 },
+                      ]}
+                      style={previewStyle === "bold" ? "white_box" : previewStyle}
+                      fontSize={16}
+                      position="bottom"
+                      visible={true}
+                      className="static"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Mute / Unmute Button */}
+              <button
+                onClick={() => setPreviewMuted(!previewMuted)}
+                className="absolute bottom-2.5 right-2.5 z-40 p-1.5 bg-black/70 hover:bg-black/90 text-white rounded-full backdrop-blur-md border border-white/20 transition shadow"
+              >
+                {previewMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+              </button>
+
+              {/* Bottom Scrubber Line */}
+              <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20 z-30 pointer-events-none">
+                <div
+                  className="h-full bg-white transition-all duration-100"
+                  style={{ width: `${Math.min(100, (previewTime / (previewClip.duration || 30)) * 100)}%` }}
+                />
+              </div>
             </div>
 
-            {/* Controls: Video Zoom & Subtitle Style */}
+            {/* Template Selector & Style Controls */}
             <div className="mt-2.5 space-y-2">
-              <div className="flex items-center justify-between bg-zinc-50 p-1.5 rounded-xl border border-zinc-200">
-                <span className="text-[10px] text-zinc-500 font-semibold px-1">Video Zoom:</span>
-                <div className="flex items-center gap-1">
-                  {[
-                    { label: 'Fit (1.0x)', val: 1.0 },
-                    { label: 'Zoomed (1.35x)', val: 1.35 },
-                    { label: 'Focus (1.5x)', val: 1.5 },
-                  ].map((z) => (
-                    <button
-                      key={z.val}
-                      onClick={() => setZoomLevel(z.val)}
-                      className={`px-2 py-0.5 text-[10px] rounded-lg font-semibold transition ${
-                        zoomLevel === z.val
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-100'
-                      }`}
-                    >
-                      {z.label}
-                    </button>
-                  ))}
+              <div className="bg-zinc-50 p-2 rounded-xl border border-zinc-200">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] text-zinc-600 font-bold flex items-center gap-1">
+                    <Layout className="w-3 h-3 text-blue-600" /> Reference Template:
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    onClick={() => {
+                      setPreviewTemplate("viral_hook");
+                      setPreviewStyle("white_box");
+                    }}
+                    className={`py-1.5 px-2 text-[10px] rounded-lg font-bold transition flex items-center justify-center gap-1 ${
+                      previewTemplate === "viral_hook"
+                        ? "bg-red-600 text-white shadow-sm"
+                        : "bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100"
+                    }`}
+                  >
+                    🔴 Red Hook (Ref 2)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPreviewTemplate("split_streamer");
+                      setPreviewStyle("seam_bold");
+                    }}
+                    className={`py-1.5 px-2 text-[10px] rounded-lg font-bold transition flex items-center justify-center gap-1 ${
+                      previewTemplate === "split_streamer"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "bg-white text-zinc-700 border border-zinc-200 hover:bg-zinc-100"
+                    }`}
+                  >
+                    🎮 Split Screen (Ref 1)
+                  </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between bg-zinc-50 p-1.5 rounded-xl border border-zinc-200">
-                <span className="text-[10px] text-zinc-500 font-semibold px-1">Subtitle Style:</span>
-                <div className="flex items-center gap-1">
-                  {(['bold', 'highlight', 'creator', 'minimal'] as SubtitleStyle[]).map((st) => (
-                    <button
-                      key={st}
-                      onClick={() => setPreviewStyle(st)}
-                      className={`px-1.5 py-0.5 text-[10px] rounded-lg font-semibold capitalize transition ${
-                        previewStyle === st
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-100'
-                      }`}
-                    >
-                      {st}
-                    </button>
-                  ))}
+              {previewTemplate === "viral_hook" && (
+                <div className="flex items-center justify-between bg-zinc-50 p-1.5 rounded-xl border border-zinc-200">
+                  <span className="text-[10px] text-zinc-500 font-semibold px-1">Video Zoom:</span>
+                  <div className="flex items-center gap-1">
+                    {[
+                      { label: "Fit (1.0x)", val: 1.0 },
+                      { label: "Zoomed (1.35x)", val: 1.35 },
+                      { label: "Focus (1.5x)", val: 1.5 },
+                    ].map((z) => (
+                      <button
+                        key={z.val}
+                        onClick={() => setZoomLevel(z.val)}
+                        className={`px-2 py-0.5 text-[10px] rounded-lg font-semibold transition ${
+                          zoomLevel === z.val
+                            ? "bg-blue-600 text-white shadow-sm"
+                            : "bg-white text-zinc-600 border border-zinc-200 hover:bg-zinc-100"
+                        }`}
+                      >
+                        {z.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="mt-3 flex items-center justify-between pt-1">

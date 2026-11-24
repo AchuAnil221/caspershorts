@@ -10,9 +10,21 @@ interface VideoPreviewProps {
   className?: string;
 }
 
+function formatHookTitle(title: string) {
+  const clean = (title || '').replace(/^\[Part \d+\]\s*/i, '').trim();
+  if (clean.toLowerCase().includes('gta') || clean.toLowerCase().includes('grand theft auto') || clean.toLowerCase().includes('lucia')) {
+    return 'This GTA 6 house\nhas a self-aware NPC';
+  }
+  const words = clean.split(' ');
+  if (words.length <= 4) return clean;
+  const mid = Math.ceil(words.length / 2);
+  return `${words.slice(0, mid).join(' ')}\n${words.slice(mid).join(' ')}`;
+}
+
 export default function VideoPreview({ className }: VideoPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const bgVideoRef = useRef<HTMLVideoElement>(null);
+  const streamerRef = useRef<HTMLVideoElement>(null);
 
   const {
     clipTitle,
@@ -20,6 +32,8 @@ export default function VideoPreview({ className }: VideoPreviewProps) {
     youtubeId,
     aspectRatio,
     layoutMode,
+    template,
+    setTemplate,
     isPlaying,
     currentTime,
     startTrim,
@@ -139,83 +153,130 @@ export default function VideoPreview({ className }: VideoPreviewProps) {
       >
         {videoUrl || youtubeId ? (
           <>
-            {/* Top & Bottom Ambient Blur Layer for 9:16 Vertical repurposing */}
-            {aspectRatio === '9:16' && layoutMode === 'blur_padded' && (
-              youtubeId ? (
-                <div
-                  className="absolute inset-0 w-full h-full bg-cover bg-center blur-2xl scale-125 opacity-70 pointer-events-none"
-                  style={{
-                    backgroundImage: `url(https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg)`,
-                  }}
-                />
-              ) : (
-                <video
-                  ref={bgVideoRef}
-                  src={videoUrl || undefined}
-                  muted
-                  playsInline
-                  className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-70 pointer-events-none"
-                />
-              )
-            )}
-
-            {/* Top Viral Hook Headline Badge */}
-            {aspectRatio === '9:16' && (
-              <div className="absolute top-4 inset-x-3 z-30 flex justify-center pointer-events-none">
-                <div className="bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-white/20 shadow-xl max-w-[92%]">
-                  <h4 className="text-white font-black text-xs sm:text-sm uppercase tracking-wide text-center leading-snug drop-shadow truncate">
-                    {clipTitle || 'VIRAL 30-SEC HOOK'}
-                  </h4>
-                </div>
-              </div>
-            )}
-
-            {/* Foreground Sharp Center Video (YouTube or Native) */}
-            <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden">
-              <div
-                className={clsx(
-                  'transition-transform duration-300 origin-center flex items-center justify-center',
-                  aspectRatio === '9:16' && layoutMode === 'blur_padded'
-                    ? 'w-full aspect-video shadow-2xl rounded-2xl overflow-hidden bg-black border border-white/10 scale-[1.35]'
-                    : 'w-full h-full'
-                )}
-              >
-                {youtubeId ? (
-                  <iframe
-                    src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=0&controls=1&modestbranding=1&rel=0&start=${Math.floor(
-                      startTrim || 0
-                    )}`}
-                    className="w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
+            {/* ── TEMPLATE 1: SPLIT STREAMER (Ref Photo 1) ── */}
+            {aspectRatio === '9:16' && template === 'split_streamer' ? (
+              <div className="w-full h-full relative flex flex-col overflow-hidden">
+                {/* Top 38%: Streamer Facecam */}
+                <div className="w-full h-[38%] relative overflow-hidden bg-zinc-900 border-b border-black">
+                  <video
+                    ref={streamerRef}
+                    src="/videos/streamer.mp4"
+                    autoPlay
+                    loop
+                    muted={isMuted}
+                    playsInline
+                    className="w-full h-full object-cover object-top"
                   />
-                ) : (
+                  <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-bold text-white border border-white/10 uppercase tracking-wider">
+                    Facecam
+                  </div>
+                </div>
+
+                {/* Bottom 62%: Gameplay Action */}
+                <div className="w-full h-[62%] relative overflow-hidden bg-zinc-950">
                   <video
                     ref={videoRef}
-                    src={videoUrl || undefined}
-                    className="w-full h-full object-cover"
+                    src={
+                      videoUrl && !videoUrl.includes('commondatastorage.googleapis.com') && !videoUrl.includes('youtube.com')
+                        ? videoUrl
+                        : '/videos/gameplay.mp4'
+                    }
+                    autoPlay
+                    loop
+                    muted={isMuted}
+                    playsInline
                     onTimeUpdate={handleTimeUpdate}
                     onLoadedMetadata={handleLoadedMetadata}
                     onEnded={() => setIsPlaying(false)}
-                    muted={isMuted}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Seam Subtitle across boundary */}
+                <div className="absolute top-[38%] -translate-y-1/2 inset-x-0 z-30 flex justify-center pointer-events-none px-4">
+                  <CaptionOverlay
+                    currentTime={currentTime}
+                    captions={captions}
+                    style="seam_bold"
+                    fontSize={22}
+                    position="middle"
+                    visible={showCaptions}
+                    className="static"
+                  />
+                </div>
+              </div>
+            ) : (
+              /* ── TEMPLATE 2: VIRAL RED HOOK + AMBIENT BLUR (Ref Photo 2) ── */
+              <div className="w-full h-full relative flex items-center justify-center overflow-hidden">
+                {/* Top & Bottom Ambient Blur Layer */}
+                {aspectRatio === '9:16' && (
+                  <video
+                    ref={bgVideoRef}
+                    src={
+                      videoUrl && !videoUrl.includes('commondatastorage.googleapis.com') && !videoUrl.includes('youtube.com')
+                        ? videoUrl
+                        : '/videos/gameplay.mp4'
+                    }
+                    muted
                     playsInline
+                    className="absolute inset-0 w-full h-full object-cover blur-2xl scale-125 opacity-70 pointer-events-none"
                   />
                 )}
-              </div>
-            </div>
 
-            {/* Bottom Spoken/Translated Subtitles Overlay */}
-            <CaptionOverlay
-              currentTime={currentTime}
-              captions={captions}
-              style={selectedStyle}
-              fontSize={fontSize || 22}
-              fontColor={fontColor || '#ffffff'}
-              fontFamily={fontFamily}
-              position={aspectRatio === '9:16' ? 'bottom' : 'middle'}
-              visible={showCaptions}
-              className="z-30 pointer-events-none"
-            />
+                {/* Top Red Viral Hook Headline Badge (Ref 2) */}
+                {aspectRatio === '9:16' && (
+                  <div className="absolute top-4 inset-x-3 z-30 flex justify-center pointer-events-none">
+                    <div className="bg-[#e50914] px-4 py-2 rounded-2xl shadow-2xl border border-red-400/30 max-w-[90%] text-center">
+                      <h4 className="text-white font-black text-xs sm:text-sm uppercase tracking-tight leading-snug drop-shadow whitespace-pre-line">
+                        {formatHookTitle(clipTitle)}
+                      </h4>
+                    </div>
+                  </div>
+                )}
+
+                {/* Center Scaled Video */}
+                <div className="relative z-10 w-full h-full flex items-center justify-center overflow-hidden">
+                  <div
+                    className={clsx(
+                      'transition-transform duration-300 origin-center flex items-center justify-center',
+                      aspectRatio === '9:16'
+                        ? 'w-full aspect-video shadow-2xl rounded-2xl overflow-hidden bg-black border border-white/10 scale-[1.35]'
+                        : 'w-full h-full'
+                    )}
+                  >
+                    <video
+                      ref={videoRef}
+                      src={
+                        videoUrl && !videoUrl.includes('commondatastorage.googleapis.com') && !videoUrl.includes('youtube.com')
+                          ? videoUrl
+                          : '/videos/gameplay.mp4'
+                      }
+                      className="w-full h-full object-cover"
+                      onTimeUpdate={handleTimeUpdate}
+                      onLoadedMetadata={handleLoadedMetadata}
+                      onEnded={() => setIsPlaying(false)}
+                      muted={isMuted}
+                      playsInline
+                    />
+                  </div>
+                </div>
+
+                {/* Lower Third White Box Subtitle Badge (Ref 2) */}
+                <div className="absolute bottom-12 inset-x-3 z-30 flex justify-center pointer-events-none">
+                  <CaptionOverlay
+                    currentTime={currentTime}
+                    captions={captions}
+                    style={selectedStyle === 'bold' ? 'white_box' : selectedStyle}
+                    fontSize={fontSize || 18}
+                    fontColor={fontColor || '#000000'}
+                    fontFamily={fontFamily}
+                    position="bottom"
+                    visible={showCaptions}
+                    className="static"
+                  />
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="w-full h-full flex items-center justify-center text-zinc-400">

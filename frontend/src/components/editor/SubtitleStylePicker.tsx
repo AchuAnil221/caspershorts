@@ -19,6 +19,18 @@ interface StylePreset {
 
 const PRESETS: StylePreset[] = [
   {
+    id: 'white_box',
+    label: 'White Box Badge',
+    description: 'Crisp white pill box with black text (Ref 2)',
+    preview: { bg: 'bg-white text-zinc-950 font-black', text: 'text-zinc-950', font: 'font-black' },
+  },
+  {
+    id: 'seam_bold',
+    label: 'Seam Bold Outline',
+    description: 'Pure white with thick black outline (Ref 1)',
+    preview: { bg: 'bg-transparent text-white font-black', text: 'text-white', font: 'font-black' },
+  },
+  {
     id: 'bold',
     label: 'Bold & Punchy',
     description: 'High-contrast yellow with black outline',

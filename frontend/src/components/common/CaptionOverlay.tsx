@@ -182,6 +182,57 @@ export default function CaptionOverlay({
         </div>
       )}
 
+      {style === 'white_box' && (
+        <div
+          className="inline-flex flex-wrap justify-center items-center bg-white text-zinc-950 font-black px-4 py-2 rounded-xl shadow-2xl border border-black/10 text-center select-none max-w-[92%]"
+          style={{ fontSize: `${Math.max(14, fontSize * 0.85)}px` }}
+        >
+          {words.map((word, idx) => {
+            const isActive = idx === activeWordIndex;
+            return (
+              <span
+                key={idx}
+                className={clsx(
+                  'inline-block mx-1 transition-colors duration-100',
+                  isActive ? 'text-black font-black scale-105' : 'text-zinc-600 font-bold'
+                )}
+              >
+                {word}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
+      {style === 'seam_bold' && (
+        <div
+          className="text-center font-black uppercase tracking-wider leading-none select-none"
+          style={{
+            fontSize: `${Math.max(20, fontSize * 1.05)}px`,
+            color: '#ffffff',
+            textShadow:
+              '-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 4px 8px rgba(0,0,0,0.9)',
+          }}
+        >
+          {words.map((word, idx) => {
+            const isActive = idx === activeWordIndex;
+            return (
+              <span
+                key={idx}
+                className={clsx(
+                  'inline-block mx-1 transition-all duration-100',
+                  isActive
+                    ? 'text-yellow-400 scale-110 drop-shadow-[0_0_8px_rgba(250,204,21,0.8)]'
+                    : 'text-white'
+                )}
+              >
+                {word}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
       {style === 'professional' && (
         <div
           className="w-full bg-gradient-to-r from-black/80 via-black/90 to-black/80 py-2.5 px-4 text-center select-none border-y border-white/10 shadow-xl"
